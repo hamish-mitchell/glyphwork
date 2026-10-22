@@ -1,0 +1,10 @@
+[package]
+name = "glyphwork"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+freya = "0.4.3"
+
+[features]
+hotreload = ["freya/hotreload"]
