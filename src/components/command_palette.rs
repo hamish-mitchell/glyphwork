@@ -21,9 +21,10 @@ impl Component for CommandPalette {
         rect()
             .position(Position::new_global())
             .expanded()
-            .center()
+            .cross_align(Alignment::Center)
             .child(
                 rect()
+                    .margin(Gaps::new(100., 0., 0., 0.))
                     .on_mouse_down(|e: Event<MouseEventData>| {
                         e.stop_propagation();
                     })
