@@ -24,8 +24,6 @@ impl Component for CommandPalette {
             .center()
             .child(
                 rect()
-                    .width(Size::px(200.))
-                    .height(Size::px(80.))
                     .on_mouse_down(|e: Event<MouseEventData>| {
                         e.stop_propagation();
                     })
