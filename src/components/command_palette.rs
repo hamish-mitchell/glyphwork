@@ -18,6 +18,8 @@ impl Component for CommandPalette {
             filter_commands(&value.read().to_string(), &commands_list)
         });
 
+        let mut highlighted_command_index = use_state(|| 0usize);
+
         rect()
             .position(Position::new_global())
             .expanded()
@@ -25,26 +27,54 @@ impl Component for CommandPalette {
             .child(
                 rect()
                     .margin(Gaps::new(100., 0., 0., 0.))
+                    .width(Size::px(200.))
                     .on_mouse_down(|e: Event<MouseEventData>| {
                         e.stop_propagation();
                     })
+                    .spacing(12.)
                     .child(
                         Input::new(value)
                             .placeholder("command here")
-                            .auto_focus(true),
+                            .auto_focus(true)
+                            .width(Size::fill())
+                            .on_pre_key_down(|e: Event<KeyboardEventData>| {
+                                // Stop arrow keys being captured by the input
+                                !matches!(
+                                    e.key,
+                                    Key::Named(NamedKey::ArrowUp | NamedKey::ArrowDown)
+                                )
+                            }),
                     )
-                    .children(filtered_commands.read().iter().map(|c| {
-                        label()
-                            .text(c.name.to_string())
-                            .color(Color::WHITE)
-                            .into_element()
-                    })),
+                    .child(
+                        rect().children(filtered_commands.read().iter().enumerate().map(
+                            |(index, c)| {
+                                rect()
+                                    .color(Color::WHITE)
+                                    .maybe(index == *highlighted_command_index.read(), |e| {
+                                        e.background(Color::WHITE.with_a(80))
+                                    })
+                                    .width(Size::fill())
+                                    .child(label().text(c.name.to_string()))
+                                    .into_element()
+                            },
+                        )),
+                    ),
             )
             .background(Color::BLACK.with_a(127))
             .layer(50)
-            .on_key_down({
+            .on_global_key_down({
                 let on_close = on_close.clone();
                 move |e: Event<KeyboardEventData>| match e.key {
+                    Key::Named(NamedKey::ArrowUp) => {
+                        let prev_index = *highlighted_command_index.read();
+                        *highlighted_command_index.write() =
+                            subtract_with_modulo(prev_index, 1, *&filtered_commands.read().len());
+                    }
+                    Key::Named(NamedKey::ArrowDown) => {
+                        let prev_index = *highlighted_command_index.read();
+                        *highlighted_command_index.write() =
+                            (prev_index + 1) % *&filtered_commands.read().len();
+                    }
                     Key::Named(NamedKey::Enter) => {
                         println!("{}", value.read());
                         on_close.call(());
@@ -67,4 +97,8 @@ fn filter_commands(query: &str, commands_list: &[Command]) -> Vec<Command> {
         .filter(|c| c.name.contains(query))
         .cloned()
         .collect();
+}
+
+fn subtract_with_modulo(a: usize, b: usize, m: usize) -> usize {
+    (a % m + m - b % m) % m
 }

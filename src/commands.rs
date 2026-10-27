@@ -20,6 +20,7 @@ pub fn build_commands_list() -> Vec<Command> {
     vec![
         Command::new("foo".to_string(), foo),
         Command::new("bar".to_string(), bar),
+        Command::new("baz".to_string(), bar),
     ]
 }
 
