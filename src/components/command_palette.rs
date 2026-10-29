@@ -19,6 +19,7 @@ impl Component for CommandPalette {
         });
 
         let mut highlighted_command_index = use_state(|| 0usize);
+        let mut hovered_command_index: State<Option<usize>> = use_state(|| None);
 
         rect()
             .position(Position::new_global())
@@ -43,17 +44,28 @@ impl Component for CommandPalette {
                                     e.key,
                                     Key::Named(NamedKey::ArrowUp | NamedKey::ArrowDown)
                                 )
-                            }),
+                            })
+                            .leading(label().text(">")),
                     )
                     .child(
                         rect().children(filtered_commands.read().iter().enumerate().map(
                             |(index, c)| {
                                 rect()
                                     .color(Color::WHITE)
-                                    .maybe(index == *highlighted_command_index.read(), |e| {
-                                        e.background(Color::WHITE.with_a(80))
-                                    })
+                                    .maybe(
+                                        index == *highlighted_command_index.read()
+                                            || hovered_command_index
+                                                .read()
+                                                .is_some_and(|i| i == index),
+                                        |e| e.background(Color::WHITE.with_a(80)),
+                                    )
                                     .width(Size::fill())
+                                    .on_pointer_enter(move |_| {
+                                        *hovered_command_index.write() = Some(index);
+                                    })
+                                    .on_pointer_leave(move |_| {
+                                        *hovered_command_index.write() = None
+                                    })
                                     .child(label().text(c.name.to_string()))
                                     .into_element()
                             },
@@ -68,12 +80,12 @@ impl Component for CommandPalette {
                     Key::Named(NamedKey::ArrowUp) => {
                         let prev_index = *highlighted_command_index.read();
                         *highlighted_command_index.write() =
-                            subtract_with_modulo(prev_index, 1, *&filtered_commands.read().len());
+                            subtract_with_modulo(prev_index, 1, filtered_commands.read().len());
                     }
                     Key::Named(NamedKey::ArrowDown) => {
                         let prev_index = *highlighted_command_index.read();
                         *highlighted_command_index.write() =
-                            (prev_index + 1) % *&filtered_commands.read().len();
+                            (prev_index + 1) % filtered_commands.read().len();
                     }
                     Key::Named(NamedKey::Enter) => {
                         println!("{}", value.read());
